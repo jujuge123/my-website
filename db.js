@@ -63,19 +63,28 @@ const DB = {
     LANG:     'luxe.lang',
   },
 
+  defaultSettings: {
+    adminPass: 'luxe2025',
+    currency: 'CNY',
+    wechatId: 'LuxeChi_VIP',
+    whatsappNumber: '+852 1234 5678',
+    whatsappLink: 'https://wa.me/85212345678',
+    lineId: '@LuxeChi',
+    lineLink: 'https://line.me/ti/p/~LuxeChi',
+    videoUrl: 'https://cdn.pixabay.com/video/2022/12/18/143397-781571295_large.mp4',
+    videoPoster: 'https://images.unsplash.com/photo-1522335789203-3da39d10ee0a?w=1600&q=80&auto=format&fit=crop',
+    brandCN: '奢驰美颜',
+    brandEN: 'LUXE CHI BEAUTY',
+    brandMark: 'L · C',
+    siteTitle: '奢驰美颜 · 全球运营中心 | LUXE CHI BEAUTY',
+    texts: {},
+  },
+
   init() {
     if (!localStorage.getItem(this.KEYS.PRODUCTS))
       this.saveProducts(DEFAULT_PRODUCTS);
-    if (!localStorage.getItem(this.KEYS.SETTINGS))
-      this.saveSettings({
-        adminPass: 'luxe2025',
-        currency: 'CNY',
-        wechatId: 'LuxeChi_VIP',
-        whatsappNumber: '+852 1234 5678',
-        whatsappLink: 'https://wa.me/85212345678',
-        lineId: '@LuxeChi',
-        lineLink: 'https://line.me/ti/p/~LuxeChi',
-      });
+    const existing = JSON.parse(localStorage.getItem(this.KEYS.SETTINGS) || 'null');
+    this.saveSettings({ ...this.defaultSettings, ...(existing || {}) });
   },
 
   // ---- Products ----

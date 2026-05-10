@@ -335,8 +335,29 @@ const I18N = {
 let CURRENT_LANG = (typeof DB !== 'undefined') ? DB.getLang() : 'zh';
 
 function t(key) {
+  // 后台覆盖优先
+  if (typeof DB !== 'undefined') {
+    const overrides = DB.getSettings().texts || {};
+    const langOv = overrides[CURRENT_LANG] || {};
+    if (langOv[key] !== undefined && langOv[key] !== '') return langOv[key];
+  }
   return (I18N[CURRENT_LANG] && I18N[CURRENT_LANG][key]) || I18N.zh[key] || key;
 }
+
+// 暴露给 admin 用的可编辑文案分组
+const TEXT_GROUPS = {
+  '导航 Nav': ['nav.brand','nav.video','nav.products','nav.stats','nav.contact','nav.consult','nav.cart','nav.admin'],
+  'Hero 首屏': ['hero.eyebrow','hero.subtitle','hero.tagline1','hero.tagline2','hero.cta1','hero.cta2','hero.scroll'],
+  '关于品牌 About': ['about.tag','about.title','about.lead','about.f1.title','about.f1.desc','about.f2.title','about.f2.desc','about.f3.title','about.f3.desc'],
+  '影像 Video': ['video.tag','video.title','video.sub','video.caption'],
+  '产品 Products': ['prod.tag','prod.title','prod.sub','prod.all','prod.skincare','prod.makeup','prod.device','prod.set','prod.view','prod.add','prod.added','prod.buy','prod.fav','prod.faved'],
+  '数据 Stats': ['stats.countries','stats.clients','stats.retention','stats.years'],
+  '联系 Contact': ['contact.tag','contact.title','contact.sub','contact.wechat.desc','contact.wechat.copy','contact.whatsapp.desc','contact.whatsapp.btn','contact.line.desc','contact.line.btn'],
+  '购物车 Cart': ['cart.title','cart.empty','cart.empty.sub','cart.subtotal','cart.shipping','cart.shipping.free','cart.total','cart.checkout','cart.continue','cart.remove'],
+  '结算 Checkout': ['co.title','co.contact','co.name','co.phone','co.email','co.shipping','co.country','co.city','co.address','co.zip','co.note','co.payment','co.pay.wechat','co.pay.alipay','co.pay.whatsapp','co.pay.line','co.pay.bank','co.summary','co.submit','co.back'],
+  '订单成功 Success': ['success.title','success.sub','success.no','success.contact','success.close'],
+  '页脚 Footer': ['footer.nav','footer.office','footer.subscribe','footer.subscribed','footer.copy','footer.craft'],
+};
 
 function applyI18n(root = document) {
   root.querySelectorAll('[data-i18n]').forEach(el => {

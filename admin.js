@@ -71,6 +71,8 @@ $$('.side-nav button').forEach(b => {
     if (tab === 'dashboard') renderDashboard();
     if (tab === 'products') renderProductTable();
     if (tab === 'orders') renderOrderTable();
+    if (tab === 'content') loadContentForms();
+    if (tab === 'texts') renderTextEditor();
     if (tab === 'settings') loadSettingsForm();
   });
 });
@@ -455,6 +457,161 @@ function refreshAll() {
   renderOrderTable();
   loadSettingsForm();
 }
+
+/* ===========================================================
+   内容管理（视频 + 品牌信息）
+   =========================================================== */
+function loadContentForms() {
+  const s = DB.getSettings();
+  ['videoUrl','videoPoster'].forEach(k => {
+    const el = $(`#contentForm [name="${k}"]`); if (el) el.value = s[k] || '';
+  });
+  ['brandCN','brandEN','brandMark','siteTitle'].forEach(k => {
+    const el = $(`#brandForm [name="${k}"]`); if (el) el.value = s[k] || '';
+  });
+  // 自动加载预览
+  const v = $('#videoPreview');
+  if (v && s.videoUrl) {
+    v.poster = s.videoPoster || '';
+    v.innerHTML = `<source src="${s.videoUrl}" type="video/mp4">`;
+    v.load();
+  }
+}
+
+$('#contentForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const s = DB.getSettings();
+  s.videoUrl = fd.get('videoUrl').trim();
+  s.videoPoster = fd.get('videoPoster').trim();
+  DB.saveSettings(s);
+  toast('视频设置已保存，前台刷新即生效');
+});
+
+$('#videoPreviewBtn')?.addEventListener('click', () => {
+  const url = $('#contentForm [name="videoUrl"]').value.trim();
+  const poster = $('#contentForm [name="videoPoster"]').value.trim();
+  const v = $('#videoPreview');
+  if (!url) { toast('请先填写视频 URL', true); return; }
+  v.poster = poster;
+  v.innerHTML = `<source src="${url}" type="video/mp4">`;
+  v.load(); v.play().catch(()=>{});
+});
+
+$('#brandForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const s = DB.getSettings();
+  ['brandCN','brandEN','brandMark','siteTitle'].forEach(k => s[k] = fd.get(k).trim());
+  DB.saveSettings(s);
+  toast('品牌信息已保存');
+});
+
+/* ===========================================================
+   文案管理
+   =========================================================== */
+let textLang = 'zh';
+let textSearch = '';
+let pendingTexts = {}; // { lang: { key: value } }
+
+$$('#textTabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    $$('#textTabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    textLang = b.dataset.lang;
+    renderTextEditor();
+  });
+});
+
+$('#textSearch')?.addEventListener('input', e => {
+  textSearch = e.target.value.trim().toLowerCase();
+  renderTextEditor();
+});
+
+function renderTextEditor() {
+  if (!window.TEXT_GROUPS) return;  // i18n.js 未加载
+  const wrap = $('#textEditor'); if (!wrap) return;
+  const s = DB.getSettings();
+  const overrides = (s.texts && s.texts[textLang]) || {};
+  pendingTexts[textLang] = pendingTexts[textLang] || { ...overrides };
+
+  wrap.innerHTML = '';
+  let hits = 0;
+
+  for (const [groupName, keys] of Object.entries(TEXT_GROUPS)) {
+    const filtered = keys.filter(k => {
+      if (!textSearch) return true;
+      const def = (I18N[textLang] && I18N[textLang][k]) || '';
+      const cur = pendingTexts[textLang][k] !== undefined ? pendingTexts[textLang][k] : def;
+      return (k + ' ' + def + ' ' + cur).toLowerCase().includes(textSearch);
+    });
+    if (filtered.length === 0) continue;
+
+    const det = document.createElement('details');
+    det.className = 'text-group';
+    det.open = true;
+    const sum = document.createElement('summary');
+    sum.innerHTML = `<strong>${groupName}</strong> <span class="muted small">${filtered.length} 项</span>`;
+    det.appendChild(sum);
+
+    const body = document.createElement('div');
+    body.className = 'text-group-body';
+    filtered.forEach(key => {
+      const def = (I18N[textLang] && I18N[textLang][key]) || '';
+      const cur = pendingTexts[textLang][key] !== undefined ? pendingTexts[textLang][key] : def;
+      const isMulti = (cur.length > 60) || cur.includes('<br') || cur.includes('\n');
+      const modified = (overrides[key] !== undefined) && (overrides[key] !== def);
+
+      const row = document.createElement('div');
+      row.className = 'text-row' + (modified ? ' modified' : '');
+      const ctrl = isMulti
+        ? `<textarea data-key="${key}" rows="3"></textarea>`
+        : `<input type="text" data-key="${key}" />`;
+      row.innerHTML = `<span class="key">${key}</span>${ctrl}`;
+
+      const input = row.querySelector('[data-key]');
+      input.value = cur;
+      input.addEventListener('input', () => {
+        pendingTexts[textLang][key] = input.value;
+        const stillModified = input.value !== def && input.value !== '';
+        row.classList.toggle('modified', stillModified || (overrides[key] !== undefined));
+      });
+      hits++;
+      body.appendChild(row);
+    });
+    det.appendChild(body);
+    wrap.appendChild(det);
+  }
+
+  if (hits === 0) {
+    wrap.innerHTML = '<p class="muted small" style="padding:30px;text-align:center">未找到匹配文案</p>';
+  }
+}
+
+$('#saveTexts')?.addEventListener('click', () => {
+  const s = DB.getSettings();
+  s.texts = s.texts || {};
+  const next = {};
+  Object.entries(pendingTexts[textLang] || {}).forEach(([k, v]) => {
+    const def = (I18N[textLang] && I18N[textLang][k]) || '';
+    if (v && v !== def) next[k] = v;
+  });
+  s.texts[textLang] = next;
+  DB.saveSettings(s);
+  const count = Object.keys(next).length;
+  toast(`已保存 ${count} 条 ${textLang.toUpperCase()} 文案修改`);
+  renderTextEditor();
+});
+
+$('#resetTexts')?.addEventListener('click', () => {
+  if (!confirm(`确认重置 ${textLang.toUpperCase()} 文案为系统默认？所有该语言的修改将被清除。`)) return;
+  const s = DB.getSettings();
+  if (s.texts) delete s.texts[textLang];
+  DB.saveSettings(s);
+  pendingTexts[textLang] = {};
+  renderTextEditor();
+  toast(`${textLang.toUpperCase()} 文案已重置`);
+});
 
 /* ---------- 启动 ---------- */
 if (isAuth()) showAdmin();

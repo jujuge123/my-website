@@ -386,17 +386,35 @@ $('#menuBtn')?.addEventListener('click', () => {
   mnav.style.display = visible ? 'none' : 'flex';
 });
 
-/* ---------- 联系信息从设置同步 ---------- */
-function syncContactFromSettings() {
+/* ---------- 联系信息 / 视频 / 品牌：从 settings 同步 ---------- */
+function syncFromSettings() {
   const s = DB.getSettings();
+  // 联系
   const wechatIdEl = $('#wechatIdDisplay'); if (wechatIdEl) wechatIdEl.textContent = s.wechatId;
   const waNumEl = $('#whatsappNumDisplay'); if (waNumEl) waNumEl.textContent = s.whatsappNumber;
   const lineIdEl = $('#lineIdDisplay'); if (lineIdEl) lineIdEl.textContent = s.lineId;
   const waLink = $('#whatsappLink'); if (waLink) waLink.href = s.whatsappLink;
   const lineLink = $('#lineLink'); if (lineLink) lineLink.href = s.lineLink;
-  const copyBtn = $('.copy-btn[data-copy]'); if (copyBtn) copyBtn.dataset.copy = s.wechatId;
+  $$('.copy-btn[data-copy]').forEach(b => b.dataset.copy = s.wechatId);
+  // 二维码 link
+  const qrW = $('#qrWeChat'); if (qrW) qrW.dataset.link = `weixin://dl/business/?ticket=${encodeURIComponent(s.wechatId||'')}`;
+  const qrA = $('#qrWhatsApp'); if (qrA) qrA.dataset.link = s.whatsappLink || '';
+  const qrL = $('#qrLine'); if (qrL) qrL.dataset.link = s.lineLink || '';
+
+  // 视频
+  if (video && s.videoUrl) {
+    const src = video.querySelector('source');
+    if (src && src.src !== s.videoUrl) { src.src = s.videoUrl; video.load(); }
+  }
+  if (video && s.videoPoster) video.poster = s.videoPoster;
+
+  // 品牌名（多处）
+  if (s.brandCN) $$('.brand-cn').forEach(el => el.textContent = s.brandCN);
+  if (s.brandEN) $$('.brand-en').forEach(el => el.textContent = el.textContent.includes('GLOBAL') ? s.brandEN + ' · GLOBAL' : s.brandEN);
+  if (s.brandMark) $$('.brand-mark').forEach(el => el.textContent = s.brandMark);
+  if (s.siteTitle) document.title = s.siteTitle;
 }
-syncContactFromSettings();
+syncFromSettings();
 
 /* ---------- 监听语言切换重新渲染购物车 ---------- */
 document.addEventListener('langchange', () => { renderCart(); renderCheckoutSummary(); });

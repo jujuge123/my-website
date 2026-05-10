@@ -255,6 +255,72 @@
   display:flex;gap:8px;margin-top:24px;flex-wrap:wrap;
 }
 
+/* ---------- Content (video preview) ---------- */
+.video-preview-wrap{
+  margin:14px 0;padding:14px;border:1px dashed var(--line);
+  background:rgba(0,0,0,.3);
+}
+
+/* ---------- Texts editor ---------- */
+.text-toolbar{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  margin-bottom:14px;padding:14px;background:#0A0908;border:1px solid var(--line);
+  position:sticky;top:70px;z-index:5;
+}
+.text-tabs{display:flex;border:1px solid var(--line)}
+.text-tabs button{
+  padding:8px 14px;font-size:12px;letter-spacing:1px;color:var(--muted);
+  border-right:1px solid var(--line);transition:all .25s;
+}
+.text-tabs button:last-child{border-right:none}
+.text-tabs button.active,
+.text-tabs button:hover{background:var(--gold);color:var(--bg)}
+.text-toolbar input[type="search"]{
+  flex:1;min-width:200px;
+  background:var(--bg);border:1px solid var(--line);color:var(--cream);
+  padding:8px 12px;font-family:var(--sans);font-size:13px;
+}
+.text-toolbar input[type="search"]:focus{outline:none;border-color:var(--gold)}
+.text-actions{display:flex;gap:10px}
+
+.text-editor{display:flex;flex-direction:column;gap:14px}
+.text-group{
+  background:#0A0908;border:1px solid var(--line);
+  padding:0;overflow:hidden;
+}
+.text-group > summary{
+  padding:14px 18px;cursor:pointer;
+  font-family:var(--serif);font-size:16px;color:var(--cream);
+  background:linear-gradient(90deg,rgba(201,169,97,.08),transparent);
+  list-style:none;display:flex;align-items:center;gap:12px;
+  transition:background .25s;
+}
+.text-group > summary::before{
+  content:"▶";font-size:10px;color:var(--gold);
+  transition:transform .25s;display:inline-block;
+}
+.text-group[open] > summary::before{transform:rotate(90deg)}
+.text-group > summary:hover{background:linear-gradient(90deg,rgba(201,169,97,.15),transparent)}
+.text-group > summary::-webkit-details-marker{display:none}
+.text-group-body{padding:8px 18px 18px;display:flex;flex-direction:column;gap:10px}
+.text-row{display:flex;flex-direction:column;gap:4px}
+.text-row .key{
+  font-size:10px;letter-spacing:.18em;color:var(--gold);
+  font-family:var(--display);text-transform:uppercase;
+}
+.text-row input,
+.text-row textarea{
+  background:var(--bg);border:1px solid var(--line);color:var(--cream);
+  padding:9px 12px;font-family:var(--sans);font-size:13px;
+  width:100%;resize:vertical;line-height:1.5;
+}
+.text-row input:focus,.text-row textarea:focus{outline:none;border-color:var(--gold)}
+.text-row.modified input,
+.text-row.modified textarea{border-color:var(--gold);background:rgba(201,169,97,.05)}
+.text-row.modified .key::after{
+  content:" ●";color:var(--gold);
+}
+
 /* ---------- Toast ---------- */
 .toast{
   position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(60px);

@@ -2,12 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#06060A" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="format-detection" content="telephone=no" />
 <title>奢驰美颜 · 运营后台 · ADMIN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Cinzel:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
-<link rel="stylesheet" href="admin.css" />
+<link rel="stylesheet" href="styles.css?v=20260518d" />
+<link rel="stylesheet" href="admin.css?v=20260518d" />
 </head>
 <body class="admin-body">
 
@@ -19,14 +23,14 @@
     <p class="muted">LUXE CHI · ADMIN PANEL</p>
     <form id="loginForm">
       <label>
-        <span>管理员密码</span>
-        <input type="password" id="passInput" autofocus required />
+        <span>后台密码</span>
+        <input type="password" id="passInput" autocomplete="current-password" required autofocus placeholder="请输入后台密码" />
       </label>
-      <button type="submit" class="btn-gold full">登 录 <span>→</span></button>
+      <button type="submit" class="btn-gold full" id="loginBtn">登 录 <span>→</span></button>
       <p id="loginErr" class="login-err"></p>
     </form>
     <p class="muted small" style="margin-top:24px">
-      默认密码: <strong style="color:var(--gold)">luxe2025</strong>（首次登录后请尽快修改）
+      默认密码 <strong style="color:var(--gold)">luxe2025</strong> · 登录后请在「设置」中修改
     </p>
     <a href="index.html" class="back-site">← 返回前台</a>
   </div>
@@ -34,7 +38,8 @@
 
 <!-- Admin -->
 <div class="admin-shell" id="adminShell" style="display:none">
-  <aside class="admin-side">
+  <div class="side-scrim" id="sideScrim"></div>
+  <aside class="admin-side" id="adminSide">
     <a href="index.html" class="side-brand">
       <span class="brand-mark">L · C</span>
       <span class="brand-text">
@@ -46,15 +51,6 @@
       <button data-tab="dashboard" class="active">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
         <span>概览</span>
-      </button>
-      <button data-tab="products">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M21 5H3v14h18V5zm-2 12H5V7h14v10zM7 9h10v2H7zm0 4h7v2H7z"/></svg>
-        <span>产品管理</span>
-      </button>
-      <button data-tab="orders">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 7h-3V5.5C16 4.1 14.9 3 13.5 3h-3C9.1 3 8 4.1 8 5.5V7H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 5.5c0-.3.2-.5.5-.5h3c.3 0 .5.2.5.5V7h-4V5.5z"/></svg>
-        <span>订单管理</span>
-        <span class="side-badge" id="orderCount">0</span>
       </button>
       <button data-tab="content">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -76,70 +72,43 @@
 
   <main class="admin-main">
     <header class="admin-head">
+      <button id="sideToggle" class="side-toggle" aria-label="Menu" aria-expanded="false">
+        <span class="menu-bar"></span>
+        <span class="menu-bar"></span>
+        <span class="menu-bar"></span>
+      </button>
       <h2 id="pageTitle">概览</h2>
       <div class="admin-head-right">
-        <a href="index.html" target="_blank" class="btn-line">查看前台 ↗</a>
+        <a href="index.html" target="_blank" class="btn-line head-view-site">查看前台 ↗</a>
+        <a href="index.html" target="_blank" class="head-view-icon" aria-label="View site">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M14 3v2h3.6L8.3 14.3l1.4 1.4L19 6.4V10h2V3h-7zM5 5h6V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-6h-2v6H5V5z"/></svg>
+        </a>
       </div>
     </header>
 
     <!-- Dashboard -->
     <section class="tab-pane active" data-pane="dashboard">
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-num" id="kpiProducts">0</div><div class="kpi-lbl">在售产品</div></div>
-        <div class="kpi"><div class="kpi-num" id="kpiOrders">0</div><div class="kpi-lbl">订单总数</div></div>
-        <div class="kpi"><div class="kpi-num" id="kpiPending">0</div><div class="kpi-lbl">待处理订单</div></div>
-        <div class="kpi"><div class="kpi-num" id="kpiRevenue">¥0</div><div class="kpi-lbl">总销售额</div></div>
+      <div class="welcome-block">
+        <div class="section-tag" style="color:var(--gold);font-family:var(--display);letter-spacing:.3em;font-size:11px;margin-bottom:14px">WELCOME BACK</div>
+        <h3 style="font-family:var(--serif);font-size:28px;color:var(--cream);font-weight:500;margin-bottom:10px">欢迎回来 · 奢驰美颜运营后台</h3>
+        <p class="muted" style="max-width:560px;line-height:1.7">在此管理品牌首页内容、联系方式、微信二维码、品牌视频与多语言文案。保存后前台访客刷新即可看到更新。</p>
       </div>
       <div class="dash-grid">
-        <div class="dash-card">
-          <h4>最新订单</h4>
-          <div id="recentOrders" class="recent-list"></div>
-        </div>
-        <div class="dash-card">
-          <h4>热销产品</h4>
-          <div id="topProducts" class="top-list"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Products -->
-    <section class="tab-pane" data-pane="products">
-      <div class="pane-toolbar">
-        <input type="search" id="prodSearch" placeholder="搜索产品..." />
-        <button class="btn-gold" id="addProdBtn">+ 添加产品</button>
-      </div>
-      <div class="data-table-wrap">
-        <table class="data-table" id="productTable">
-          <thead><tr>
-            <th>图</th><th>产品名</th><th>分类</th><th>价格</th>
-            <th>原价</th><th>库存</th><th>操作</th>
-          </tr></thead>
-          <tbody id="productTbody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Orders -->
-    <section class="tab-pane" data-pane="orders">
-      <div class="pane-toolbar">
-        <input type="search" id="orderSearch" placeholder="按订单号 / 姓名 / 电话搜索..." />
-        <select id="orderFilter">
-          <option value="all">全部状态</option>
-          <option value="pending">待支付</option>
-          <option value="paid">已支付</option>
-          <option value="shipped">已发货</option>
-          <option value="completed">已完成</option>
-          <option value="cancelled">已取消</option>
-        </select>
-      </div>
-      <div class="data-table-wrap">
-        <table class="data-table" id="orderTable">
-          <thead><tr>
-            <th>订单号</th><th>客户</th><th>金额</th><th>支付方式</th>
-            <th>状态</th><th>下单时间</th><th>操作</th>
-          </tr></thead>
-          <tbody id="orderTbody"></tbody>
-        </table>
+        <button data-tab="content" class="dash-card dash-action">
+          <h4>品牌内容</h4>
+          <p class="muted small">头部视频 · 品牌名 / Logo / 网页标题</p>
+          <span class="gold-text">进入管理 →</span>
+        </button>
+        <button data-tab="texts" class="dash-card dash-action">
+          <h4>多语言文案</h4>
+          <p class="muted small">中文 / English / 日本语 · 任意调整页面文本</p>
+          <span class="gold-text">进入管理 →</span>
+        </button>
+        <button data-tab="settings" class="dash-card dash-action">
+          <h4>联系信息 / QR</h4>
+          <p class="muted small">微信号 / 微信二维码 / WhatsApp / LINE</p>
+          <span class="gold-text">进入管理 →</span>
+        </button>
       </div>
     </section>
 
@@ -148,15 +117,29 @@
       <div class="settings-grid">
         <div class="set-card" style="grid-column:span 2">
           <h4>品牌视频</h4>
-          <p class="muted small">替换首页"品牌影像"区的视频。支持 mp4 直链（CDN / Pixabay / 自有 OSS 等）。</p>
+          <p class="muted small">支持 <strong style="color:var(--gold)">YouTube · Bilibili · Vimeo</strong> 链接，或 <strong style="color:var(--gold)">.mp4 直链</strong>。粘贴后自动识别。</p>
           <form id="contentForm" class="set-form">
-            <label><span>视频 URL（mp4）</span><input name="videoUrl" placeholder="https://.../brand.mp4" /></label>
-            <label><span>视频海报图 URL</span><input name="videoPoster" placeholder="https://.../poster.jpg" /></label>
-            <div class="video-preview-wrap">
-              <video id="videoPreview" controls preload="metadata" style="width:100%;max-width:520px;display:block;background:#000"></video>
-              <button type="button" class="btn-line" id="videoPreviewBtn" style="margin-top:10px">预览当前 URL</button>
-            </div>
+            <label>
+              <span>视频链接</span>
+              <input name="videoUrl" placeholder="https://www.youtube.com/watch?v=...  或  https://www.bilibili.com/video/BV...  或  https://.../video.mp4" />
+            </label>
+            <label>
+              <span>视频海报图 URL <small class="muted">（仅 mp4 直链需要，YouTube/Bilibili 自带封面）</small></span>
+              <input name="videoPoster" placeholder="https://.../poster.jpg" />
+            </label>
+            <div class="video-preview-wrap" id="adminVideoPreview" style="background:#000;aspect-ratio:16/9;max-width:520px;width:100%"></div>
+            <button type="button" class="btn-line" id="videoPreviewBtn">预览当前链接</button>
             <button class="btn-gold" type="submit">保存视频设置</button>
+            <details style="margin-top:10px">
+              <summary class="muted small" style="cursor:pointer">📖 链接示例</summary>
+              <div class="muted small" style="line-height:1.85;margin-top:8px;padding-left:16px">
+                · YouTube：<code>https://www.youtube.com/watch?v=dQw4w9WgXcQ</code><br/>
+                · YouTube 短链：<code>https://youtu.be/dQw4w9WgXcQ</code><br/>
+                · Bilibili：<code>https://www.bilibili.com/video/BV1xx411c7mD</code><br/>
+                · Vimeo：<code>https://vimeo.com/76979871</code><br/>
+                · MP4 直链：<code>https://cdn.../brand.mp4</code>
+              </div>
+            </details>
           </form>
         </div>
         <div class="set-card">
@@ -212,6 +195,23 @@
           <p class="muted small">这些信息会同步显示在前台联系区与订单成功页。</p>
           <form id="contactForm" class="set-form">
             <label><span>微信号</span><input name="wechatId" required /></label>
+
+            <div class="qr-upload-block">
+              <span class="qr-upload-label">微信二维码图片</span>
+              <p class="muted small">前台「添加微信」弹窗会显示此图。建议正方形 PNG / JPG，&le; 1.5MB。从手机微信「我的二维码」保存导出最佳。</p>
+              <div class="qr-upload-row">
+                <div class="qr-preview" id="wechatQRPreview"><span class="qr-empty">未上传</span></div>
+                <div class="qr-upload-actions">
+                  <label class="btn-line qr-upload-pick">
+                    <input type="file" id="wechatQRInput" accept="image/png,image/jpeg,image/webp" hidden />
+                    选择图片
+                  </label>
+                  <button type="button" class="btn-line danger" id="wechatQRClear">移除</button>
+                  <span class="muted small qr-upload-status" id="wechatQRStatus"></span>
+                </div>
+              </div>
+            </div>
+
             <label><span>WhatsApp 号码</span><input name="whatsappNumber" /></label>
             <label><span>WhatsApp 链接</span><input name="whatsappLink" placeholder="https://wa.me/..." /></label>
             <label><span>LINE ID</span><input name="lineId" /></label>
@@ -220,24 +220,22 @@
           </form>
         </div>
         <div class="set-card">
-          <h4>修改密码</h4>
-          <p class="muted small">为安全起见请定期修改管理员密码。</p>
-          <form id="passForm" class="set-form">
-            <label><span>当前密码</span><input type="password" name="old" required /></label>
-            <label><span>新密码</span><input type="password" name="new" required minlength="4" /></label>
-            <label><span>确认新密码</span><input type="password" name="confirm" required minlength="4" /></label>
+          <h4>修改后台密码</h4>
+          <p class="muted small">后台密码保存在浏览器与云端设置中。修改后请妥善保管。</p>
+          <form class="set-form" id="passForm" style="margin-top:18px">
+            <label><span>当前密码</span><input type="password" name="oldPass" required autocomplete="current-password" /></label>
+            <label><span>新密码（≥ 6 位）</span><input type="password" name="newPass" required minlength="6" autocomplete="new-password" /></label>
+            <label><span>再次输入新密码</span><input type="password" name="newPass2" required minlength="6" autocomplete="new-password" /></label>
             <button class="btn-gold" type="submit">更新密码</button>
           </form>
         </div>
-        <div class="set-card danger">
-          <h4>数据维护</h4>
-          <p class="muted small">谨慎操作。重置后无法恢复。</p>
+        <div class="set-card">
+          <h4>数据备份</h4>
+          <p class="muted small">导出所有设置为 JSON 备份。可随时导入恢复。</p>
           <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px">
-            <button class="btn-line" id="exportBtn">📥 导出全部数据 (JSON)</button>
-            <button class="btn-line" id="importBtn">📤 导入数据 (JSON)</button>
+            <button class="btn-line" id="exportBtn">📥 导出设置 (JSON)</button>
+            <button class="btn-line" id="importBtn">📤 导入设置 (JSON)</button>
             <input type="file" id="importFile" accept=".json" hidden />
-            <button class="btn-line danger" id="resetProdBtn">⚠ 重置为默认产品</button>
-            <button class="btn-line danger" id="clearOrdersBtn">⚠ 清空所有订单</button>
           </div>
         </div>
       </div>
@@ -245,60 +243,13 @@
   </main>
 </div>
 
-<!-- Product Edit Modal -->
-<div class="modal" id="prodModal">
-  <div class="modal-bg" onclick="closeProdModal()"></div>
-  <div class="modal-card prod-edit-card">
-    <button class="modal-close" onclick="closeProdModal()">×</button>
-    <h3 id="prodModalTitle" style="font-family:var(--serif);font-size:26px;color:var(--cream);font-weight:500;padding:32px 32px 0">添加产品</h3>
-    <form id="prodForm" class="prod-form">
-      <input type="hidden" name="id" />
-      <div class="form-row">
-        <label><span>产品名（中文）</span><input name="name" required /></label>
-        <label><span>产品名（英文）</span><input name="en" required /></label>
-      </div>
-      <div class="form-row">
-        <label>
-          <span>分类</span>
-          <select name="cat" required>
-            <option value="skincare">奢护精华</option>
-            <option value="makeup">高定彩妆</option>
-            <option value="device">美容仪器</option>
-            <option value="set">尊享礼盒</option>
-          </select>
-        </label>
-        <label><span>角标 (例: 限量/新品)</span><input name="tag" /></label>
-      </div>
-      <div class="form-row">
-        <label><span>售价 (¥)</span><input name="price" type="number" min="0" step="1" required /></label>
-        <label><span>原价 (¥)</span><input name="original" type="number" min="0" step="1" required /></label>
-        <label><span>库存</span><input name="stock" type="number" min="0" step="1" value="100" /></label>
-      </div>
-      <label><span>主图 URL</span><input name="image" required /></label>
-      <label><span>产品介绍</span><textarea name="desc" rows="3"></textarea></label>
-      <label><span>卖点（每行一个）</span><textarea name="feats" rows="4" placeholder="阿尔巴黑松露萃取&#10;瑞士胜肽 SH-Polypeptide-9&#10;..."></textarea></label>
-      <div class="form-actions">
-        <button type="button" class="btn-line" onclick="closeProdModal()">取消</button>
-        <button type="submit" class="btn-gold">保存产品</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Order Detail Modal -->
-<div class="modal" id="orderModal">
-  <div class="modal-bg" onclick="closeOrderModal()"></div>
-  <div class="modal-card order-detail-card">
-    <button class="modal-close" onclick="closeOrderModal()">×</button>
-    <div id="orderDetail"></div>
-  </div>
-</div>
-
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
-<script src="db.js"></script>
-<script src="i18n.js"></script>
-<script src="admin.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js?v=20260518d"></script>
+<script src="db.js?v=20260518d"></script>
+<script src="i18n.js?v=20260518d"></script>
+<script src="admin.js?v=20260518d"></script>
 </body>
 </html>

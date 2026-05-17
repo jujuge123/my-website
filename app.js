@@ -11,299 +11,11 @@ applyI18n();
 $$('[data-lang-btn]').forEach(b => {
   if (b.dataset.langBtn === CURRENT_LANG) b.classList.add('active');
   b.addEventListener('click', () => {
-    $$('[data-lang-btn]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    setLang(b.dataset.langBtn);
-    renderProducts();
-    updateCartBadge();
+    const lang = b.dataset.langBtn;
+    $$('[data-lang-btn]').forEach(x => x.classList.toggle('active', x.dataset.langBtn === lang));
+    setLang(lang);
+    closeMobileMenu();
   });
-});
-
-/* ---------- 货币格式 ---------- */
-function fmtPrice(n) {
-  const lang = CURRENT_LANG;
-  const sym = lang === 'en' ? '¥' : lang === 'ja' ? '¥' : '¥';
-  return sym + Number(n).toLocaleString();
-}
-
-/* ---------- 产品渲染 ---------- */
-const productGrid = $('#productGrid');
-let currentFilter = 'all';
-
-function getProductName(p) {
-  return CURRENT_LANG === 'zh' ? p.name : (p.en || p.name);
-}
-function getProductCat(p) {
-  const map = {
-    skincare: t('prod.skincare'),
-    makeup:   t('prod.makeup'),
-    device:   t('prod.device'),
-    set:      t('prod.set'),
-  };
-  return map[p.cat] || p.catLabel;
-}
-
-function renderProducts() {
-  const products = DB.getProducts();
-  const list = currentFilter === 'all'
-    ? products
-    : products.filter(p => p.cat === currentFilter);
-  productGrid.innerHTML = '';
-  list.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'product-card reveal';
-    card.style.transitionDelay = (i * 60) + 'ms';
-    card.innerHTML = `
-      <div class="product-image" style="background-image:url('${p.image}')">
-        ${p.tag ? `<span class="product-tag">${p.tag}</span>` : ''}
-      </div>
-      <div class="product-info">
-        <span class="product-cat">${getProductCat(p)}</span>
-        <h3 class="product-name">${getProductName(p)}</h3>
-        <p class="product-en">${p.en || ''}</p>
-        <div class="product-bottom">
-          <span class="product-price">${fmtPrice(p.price)}<small>${fmtPrice(p.original)}</small></span>
-          <span class="product-view">${t('prod.view')} →</span>
-        </div>
-        <div class="product-actions">
-          <button class="btn-add" data-add="${p.id}">${t('prod.add')}</button>
-        </div>
-      </div>
-    `;
-    card.querySelector('.product-image').addEventListener('click', () => openProductModal(p));
-    card.querySelector('.product-name').addEventListener('click', () => openProductModal(p));
-    card.querySelector('.product-view').addEventListener('click', () => openProductModal(p));
-    card.querySelector('.btn-add').addEventListener('click', e => {
-      e.stopPropagation();
-      Cart.add(p);
-      const btn = e.currentTarget;
-      btn.textContent = t('prod.added');
-      btn.classList.add('added');
-      setTimeout(() => { btn.textContent = t('prod.add'); btn.classList.remove('added'); }, 1500);
-    });
-    productGrid.appendChild(card);
-  });
-  $$('.product-card.reveal').forEach(el => observer.observe(el));
-}
-
-/* ---------- 分类筛选 ---------- */
-$$('.chip').forEach(c => {
-  c.addEventListener('click', () => {
-    $$('.chip').forEach(x => x.classList.remove('active'));
-    c.classList.add('active');
-    currentFilter = c.dataset.cat;
-    renderProducts();
-  });
-});
-
-/* ---------- 产品详情弹窗 ---------- */
-const modal = $('#modal');
-let currentProductInModal = null;
-function openProductModal(p) {
-  currentProductInModal = p;
-  $('#mImg').style.backgroundImage = `url('${p.image}')`;
-  $('#mCat').textContent = getProductCat(p);
-  $('#mTitle').textContent = getProductName(p);
-  $('#mSubtitle').textContent = p.en || '';
-  $('#mPrice').textContent = fmtPrice(p.price);
-  $('#mOrig').textContent = fmtPrice(p.original);
-  $('#mDesc').textContent = p.desc || '';
-  $('#mFeats').innerHTML = (p.feats || []).map(f => `<li>${f}</li>`).join('');
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal() {
-  modal.classList.remove('open');
-  document.body.style.overflow = '';
-}
-$('#modalClose').addEventListener('click', closeModal);
-$('.modal-bg', modal).addEventListener('click', closeModal);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeCart(); closeCheckout(); }});
-
-$('#mBuy').addEventListener('click', e => {
-  e.preventDefault();
-  if (currentProductInModal) Cart.add(currentProductInModal);
-  closeModal();
-  openCart();
-});
-$('#mFav').addEventListener('click', e => {
-  const wishlist = JSON.parse(localStorage.getItem('luxe.wish') || '[]');
-  if (currentProductInModal && !wishlist.includes(currentProductInModal.id)) {
-    wishlist.push(currentProductInModal.id);
-    localStorage.setItem('luxe.wish', JSON.stringify(wishlist));
-  }
-  e.target.textContent = t('prod.faved');
-  e.target.style.color = 'var(--gold)';
-});
-
-/* ---------- 购物车 ---------- */
-const Cart = {
-  items: DB.getCart(),
-  save() { DB.saveCart(this.items); updateCartBadge(); renderCart(); },
-  add(p) {
-    const it = this.items.find(x => x.id === p.id);
-    if (it) it.qty += 1;
-    else this.items.push({ id: p.id, name: p.name, en: p.en, price: p.price, image: p.image, qty: 1 });
-    this.save();
-    flashCart();
-  },
-  remove(id) {
-    this.items = this.items.filter(x => x.id !== id);
-    this.save();
-  },
-  setQty(id, qty) {
-    const it = this.items.find(x => x.id === id);
-    if (!it) return;
-    if (qty <= 0) this.remove(id);
-    else { it.qty = qty; this.save(); }
-  },
-  total() {
-    return this.items.reduce((s, x) => s + x.price * x.qty, 0);
-  },
-  count() {
-    return this.items.reduce((s, x) => s + x.qty, 0);
-  },
-  clear() {
-    this.items = []; this.save();
-  },
-};
-
-function updateCartBadge() {
-  const badge = $('#cartBadge');
-  const c = Cart.count();
-  badge.textContent = c;
-  badge.style.display = c > 0 ? 'flex' : 'none';
-}
-function flashCart() {
-  const btn = $('#cartBtn');
-  btn.classList.remove('flash'); void btn.offsetWidth;
-  btn.classList.add('flash');
-}
-function openCart() {
-  $('#cartDrawer').classList.add('open');
-  $('#drawerBg').classList.add('open');
-  renderCart();
-}
-function closeCart() {
-  $('#cartDrawer').classList.remove('open');
-  $('#drawerBg').classList.remove('open');
-}
-function renderCart() {
-  const body = $('#cartBody');
-  if (Cart.items.length === 0) {
-    body.innerHTML = `
-      <div class="cart-empty">
-        <svg viewBox="0 0 24 24" width="60" height="60" style="opacity:.4">
-          <path fill="currentColor" d="M7 4h-2l-2 2v2h2l3 12h12l3-9h-15"/>
-        </svg>
-        <h4>${t('cart.empty')}</h4>
-        <p class="muted">${t('cart.empty.sub')}</p>
-        <button class="btn-line" onclick="closeCart()">${t('cart.continue')}</button>
-      </div>`;
-    $('#cartFooter').style.display = 'none';
-    return;
-  }
-  $('#cartFooter').style.display = 'block';
-  body.innerHTML = Cart.items.map(it => `
-    <div class="cart-item">
-      <div class="ci-img" style="background-image:url('${it.image}')"></div>
-      <div class="ci-info">
-        <h5>${CURRENT_LANG==='zh' ? it.name : (it.en || it.name)}</h5>
-        <p class="muted">${fmtPrice(it.price)}</p>
-        <div class="qty-ctrl">
-          <button data-qty-dec="${it.id}">−</button>
-          <span>${it.qty}</span>
-          <button data-qty-inc="${it.id}">+</button>
-          <button class="ci-remove" data-remove="${it.id}" title="${t('cart.remove')}">×</button>
-        </div>
-      </div>
-      <div class="ci-total">${fmtPrice(it.price * it.qty)}</div>
-    </div>
-  `).join('');
-  $('#cartSubtotal').textContent = fmtPrice(Cart.total());
-  $('#cartTotal').textContent = fmtPrice(Cart.total());
-  body.querySelectorAll('[data-qty-inc]').forEach(b => b.onclick = () => {
-    const id = +b.dataset.qtyInc; const it = Cart.items.find(x=>x.id===id); Cart.setQty(id, it.qty+1);
-  });
-  body.querySelectorAll('[data-qty-dec]').forEach(b => b.onclick = () => {
-    const id = +b.dataset.qtyDec; const it = Cart.items.find(x=>x.id===id); Cart.setQty(id, it.qty-1);
-  });
-  body.querySelectorAll('[data-remove]').forEach(b => b.onclick = () => Cart.remove(+b.dataset.remove));
-}
-
-$('#cartBtn').addEventListener('click', openCart);
-$('#cartClose').addEventListener('click', closeCart);
-$('#drawerBg').addEventListener('click', closeCart);
-$('#checkoutBtn').addEventListener('click', () => { closeCart(); openCheckout(); });
-
-/* ---------- 结算 ---------- */
-function openCheckout() {
-  if (Cart.items.length === 0) { openCart(); return; }
-  renderCheckoutSummary();
-  $('#checkoutModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeCheckout() {
-  $('#checkoutModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function renderCheckoutSummary() {
-  $('#coItems').innerHTML = Cart.items.map(it => `
-    <div class="co-item">
-      <div class="ci-img sm" style="background-image:url('${it.image}')"></div>
-      <div style="flex:1">
-        <p class="co-item-name">${CURRENT_LANG==='zh' ? it.name : (it.en || it.name)}</p>
-        <p class="muted small">x${it.qty}</p>
-      </div>
-      <div>${fmtPrice(it.price * it.qty)}</div>
-    </div>
-  `).join('');
-  $('#coTotal').textContent = fmtPrice(Cart.total());
-}
-
-$('#coClose').addEventListener('click', closeCheckout);
-$('#coBack').addEventListener('click', () => { closeCheckout(); openCart(); });
-
-$('#checkoutForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const order = {
-    customer: {
-      name:    fd.get('name'),
-      phone:   fd.get('phone'),
-      email:   fd.get('email'),
-      country: fd.get('country'),
-      city:    fd.get('city'),
-      address: fd.get('address'),
-      zip:     fd.get('zip'),
-      note:    fd.get('note'),
-    },
-    payment: fd.get('payment'),
-    items: Cart.items.map(x => ({...x})),
-    total: Cart.total(),
-    lang: CURRENT_LANG,
-  };
-  const saved = DB.addOrder(order);
-  Cart.clear();
-  closeCheckout();
-  showSuccess(saved);
-});
-
-/* ---------- 成功页 ---------- */
-function showSuccess(order) {
-  const settings = DB.getSettings();
-  $('#sucNo').textContent = order.id;
-  $('#sucWa').href = settings.whatsappLink;
-  $('#sucWa span.id').textContent = settings.whatsappNumber;
-  $('#sucLine').href = settings.lineLink;
-  $('#sucLine span.id').textContent = settings.lineId;
-  $('#sucWeChatId').textContent = settings.wechatId;
-  $('#successModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-$('#sucClose').addEventListener('click', () => {
-  $('#successModal').classList.remove('open');
-  document.body.style.overflow = '';
 });
 
 /* ---------- Reveal 动画 ---------- */
@@ -318,17 +30,71 @@ $$('.reveal').forEach(el => observer.observe(el));
 const nav = $('#nav');
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 60));
 
-/* ---------- 视频 ---------- */
+/* ---------- 视频（支持 mp4 / YouTube / Bilibili / Vimeo） ---------- */
 const video = $('#brandVideo');
 const vOverlay = $('#videoOverlay');
+const vEmbed = $('#videoEmbed');
+
+// 识别视频源类型，返回 { type, embedUrl }
+function parseVideoSource(url) {
+  if (!url) return { type: 'none' };
+  const u = url.trim();
+  // YouTube
+  let m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (m) return { type: 'youtube', embedUrl: `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1` };
+  // Bilibili - bvid
+  m = u.match(/bilibili\.com\/video\/(BV[A-Za-z0-9]+)/i);
+  if (m) return { type: 'bilibili', embedUrl: `https://player.bilibili.com/player.html?bvid=${m[1]}&high_quality=1&danmaku=0` };
+  // Bilibili - aid
+  m = u.match(/bilibili\.com\/video\/av(\d+)/i);
+  if (m) return { type: 'bilibili', embedUrl: `https://player.bilibili.com/player.html?aid=${m[1]}&high_quality=1&danmaku=0` };
+  // Vimeo
+  m = u.match(/vimeo\.com\/(\d+)/);
+  if (m) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${m[1]}` };
+  // 默认当 mp4 直链处理
+  return { type: 'mp4', embedUrl: u };
+}
+
+// 根据 URL 挂载合适的播放器
+function mountVideo(url, posterUrl) {
+  const src = parseVideoSource(url);
+  if (src.type === 'mp4' || src.type === 'none') {
+    // 显示 <video> + overlay，隐藏 iframe
+    if (vEmbed) { vEmbed.hidden = true; vEmbed.innerHTML = ''; }
+    if (video) {
+      video.style.display = '';
+      const sourceEl = video.querySelector('source');
+      if (src.embedUrl && sourceEl && sourceEl.src !== src.embedUrl) {
+        sourceEl.src = src.embedUrl;
+        video.load();
+      }
+      if (posterUrl) video.poster = posterUrl;
+    }
+    if (vOverlay) vOverlay.style.display = '';
+  } else {
+    // 隐藏 <video> + overlay，显示 iframe
+    if (video) { video.pause?.(); video.style.display = 'none'; }
+    if (vOverlay) vOverlay.style.display = 'none';
+    if (vEmbed) {
+      vEmbed.hidden = false;
+      // 已挂载相同 URL 不重建（避免重复请求）
+      if (vEmbed.dataset.url !== src.embedUrl) {
+        vEmbed.dataset.url = src.embedUrl;
+        vEmbed.innerHTML = `<iframe src="${src.embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy"></iframe>`;
+      }
+    }
+  }
+}
+
 function playVideo() {
+  if (!video || video.style.display === 'none') return;
   video.play().catch(()=>{});
-  vOverlay.classList.add('hidden');
+  vOverlay?.classList.add('hidden');
   video.controls = true;
 }
-$('#playBtn').addEventListener('click', playVideo);
-vOverlay.addEventListener('click', playVideo);
-video.addEventListener('ended', () => vOverlay.classList.remove('hidden'));
+$('#playBtn')?.addEventListener('click', playVideo);
+vOverlay?.addEventListener('click', playVideo);
+video?.addEventListener('ended', () => vOverlay?.classList.remove('hidden'));
 
 /* ---------- 数字滚动 ---------- */
 const statObs = new IntersectionObserver(es => {
@@ -350,63 +116,84 @@ const statObs = new IntersectionObserver(es => {
 }, { threshold: 0.5 });
 $$('.stat .num').forEach(el => statObs.observe(el));
 
-/* ---------- 复制微信号 ---------- */
-$$('.copy-btn').forEach(b => {
-  b.addEventListener('click', async () => {
-    const text = b.dataset.copy || DB.getSettings().wechatId;
-    try { await navigator.clipboard.writeText(text); }
-    catch { prompt('Copy:', text); return; }
-    const orig = b.textContent;
-    b.textContent = '✓ ' + text;
-    b.style.background = 'var(--gold)'; b.style.color = 'var(--bg)';
-    setTimeout(() => { b.textContent = orig; b.style.background=''; b.style.color=''; }, 2000);
-  });
-});
-
-/* ---------- QR 生成 ---------- */
-function buildQR(elId) {
-  const el = $('#' + elId);
-  if (!el) return;
-  const link = el.dataset.link || '';
-  const url = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&color=0B0A09&bgcolor=FFFFFF&data=' + encodeURIComponent(link);
-  const img = new Image();
-  img.alt = 'QR'; img.src = url;
-  img.onerror = () => {
-    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#0B0A09;font-family:var(--serif);font-size:14px;">${elId}</div>`;
-  };
-  el.innerHTML = '';
-  el.appendChild(img);
+/* ---------- 复制工具 ---------- */
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    // 兜底：用临时 textarea
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      return true;
+    } catch { return false; }
+  }
 }
-['qrWeChat','qrWhatsApp','qrLine'].forEach(buildQR);
+
+/* ---------- 复制微信号按钮 ---------- */
+$('#wechatCopyBtn')?.addEventListener('click', async e => {
+  e.preventDefault();
+  const btn = e.currentTarget;
+  const id = btn.dataset.copy || DB.getSettings().wechatId || '';
+  const ok = await copyText(id);
+  const span = btn.querySelector('span');
+  const orig = span ? span.textContent : btn.textContent;
+  if (span) span.textContent = ok ? `✓ ${id}` : id;
+  else btn.textContent = ok ? `✓ ${id}` : id;
+  btn.classList.add('added');
+  setTimeout(() => {
+    if (span) span.textContent = orig; else btn.textContent = orig;
+    btn.classList.remove('added');
+  }, 2200);
+});
 
 /* ---------- 移动菜单 ---------- */
-$('#menuBtn')?.addEventListener('click', () => {
-  const mnav = $('#nav nav');
-  const visible = getComputedStyle(mnav).display !== 'none';
-  mnav.style.display = visible ? 'none' : 'flex';
-});
+const navEl = $('#nav');
+const menuBtn = $('#menuBtn');
+function openMobileMenu() {
+  if (!navEl) return;
+  navEl.classList.add('menu-open');
+  menuBtn?.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('no-scroll');
+}
+function closeMobileMenu() {
+  if (!navEl) return;
+  navEl.classList.remove('menu-open');
+  menuBtn?.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('no-scroll');
+}
+function toggleMobileMenu() {
+  if (navEl?.classList.contains('menu-open')) closeMobileMenu();
+  else openMobileMenu();
+}
+menuBtn?.addEventListener('click', toggleMobileMenu);
+$('#navScrim')?.addEventListener('click', closeMobileMenu);
+/* 点击菜单内导航链接自动收起 */
+$$('#mainNav a').forEach(a => a.addEventListener('click', closeMobileMenu));
+/* Esc 关闭 */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileMenu(); });
+/* 切到桌面尺寸时确保收起 */
+window.matchMedia('(min-width: 721px)').addEventListener('change', e => { if (e.matches) closeMobileMenu(); });
 
 /* ---------- 联系信息 / 视频 / 品牌：从 settings 同步 ---------- */
 function syncFromSettings() {
   const s = DB.getSettings();
-  // 联系
-  const wechatIdEl = $('#wechatIdDisplay'); if (wechatIdEl) wechatIdEl.textContent = s.wechatId;
-  const waNumEl = $('#whatsappNumDisplay'); if (waNumEl) waNumEl.textContent = s.whatsappNumber;
-  const lineIdEl = $('#lineIdDisplay'); if (lineIdEl) lineIdEl.textContent = s.lineId;
-  const waLink = $('#whatsappLink'); if (waLink) waLink.href = s.whatsappLink;
-  const lineLink = $('#lineLink'); if (lineLink) lineLink.href = s.lineLink;
-  $$('.copy-btn[data-copy]').forEach(b => b.dataset.copy = s.wechatId);
-  // 二维码 link
-  const qrW = $('#qrWeChat'); if (qrW) qrW.dataset.link = `weixin://dl/business/?ticket=${encodeURIComponent(s.wechatId||'')}`;
-  const qrA = $('#qrWhatsApp'); if (qrA) qrA.dataset.link = s.whatsappLink || '';
-  const qrL = $('#qrLine'); if (qrL) qrL.dataset.link = s.lineLink || '';
 
-  // 视频
-  if (video && s.videoUrl) {
-    const src = video.querySelector('source');
-    if (src && src.src !== s.videoUrl) { src.src = s.videoUrl; video.load(); }
-  }
-  if (video && s.videoPoster) video.poster = s.videoPoster;
+  // === 微信卡 ===
+  const wechatIdEl = $('#wechatIdDisplay'); if (wechatIdEl) wechatIdEl.textContent = s.wechatId || '';
+  const wechatCopyBtn = $('#wechatCopyBtn'); if (wechatCopyBtn) wechatCopyBtn.dataset.copy = s.wechatId || '';
+
+  // === WhatsApp 卡 ===
+  const waLink = $('#contactWhatsApp'); if (waLink && s.whatsappLink) waLink.href = s.whatsappLink;
+  const waNumEl = $('#whatsappNumberDisplay'); if (waNumEl) waNumEl.textContent = s.whatsappNumber || '';
+
+  // === LINE 卡 ===
+  const lineLink = $('#contactLine'); if (lineLink && s.lineLink) lineLink.href = s.lineLink;
+  const lineIdEl = $('#lineIdDisplay'); if (lineIdEl) lineIdEl.textContent = s.lineId || '';
+
+  // 视频（自动识别 mp4 / YouTube / Bilibili / Vimeo）
+  if (s.videoUrl) mountVideo(s.videoUrl, s.videoPoster);
 
   // 品牌名（多处）
   if (s.brandCN) $$('.brand-cn').forEach(el => el.textContent = s.brandCN);
@@ -414,10 +201,20 @@ function syncFromSettings() {
   if (s.brandMark) $$('.brand-mark').forEach(el => el.textContent = s.brandMark);
   if (s.siteTitle) document.title = s.siteTitle;
 }
-syncFromSettings();
+/* 后台另一标签页改了 settings → 前台自动同步 */
+window.addEventListener('storage', e => {
+  if (!e.key) return;
+  if (e.key === DB.KEYS.SETTINGS) {
+    syncFromSettings();
+    if (typeof applyI18n === 'function') applyI18n();
+  }
+});
 
-/* ---------- 监听语言切换重新渲染购物车 ---------- */
-document.addEventListener('langchange', () => { renderCart(); renderCheckoutSummary(); });
+/* DB bootstrap 完成后重新渲染 */
+document.addEventListener('db-ready', () => {
+  syncFromSettings();
+  if (typeof applyI18n === 'function') applyI18n();
+});
 
 /* ---------- Newsletter ---------- */
 $('#newsletterForm')?.addEventListener('submit', e => {
@@ -427,5 +224,14 @@ $('#newsletterForm')?.addEventListener('submit', e => {
 });
 
 /* ---------- 初始 ---------- */
-updateCartBadge();
-renderProducts();
+(async function init() {
+  // 先走本地缓存渲染一遍（避免首屏空白）
+  if (typeof DB._loadLocal === 'function') DB._loadLocal();
+  syncFromSettings();
+  // 再异步拉云端，拉完会触发 db-ready 事件重新渲染
+  try {
+    await DB.bootstrap();
+  } catch (err) {
+    console.warn('[app] bootstrap failed', err);
+  }
+})();

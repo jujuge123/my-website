@@ -96,8 +96,41 @@
 .admin-head h2{
   font-family:var(--serif);font-size:24px;color:var(--cream);
   font-weight:500;letter-spacing:2px;
+  flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .admin-head-right{display:flex;gap:12px;align-items:center}
+
+/* 移动端汉堡按钮 + 图标版"查看前台"（默认隐藏） */
+.side-toggle{
+  display:none;width:40px;height:40px;
+  border:1px solid var(--line);
+  flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  margin-right:10px;flex-shrink:0;transition:border-color .25s;
+}
+.side-toggle:hover{border-color:var(--gold)}
+.side-toggle .menu-bar{
+  display:block;width:16px;height:1.5px;background:var(--cream);
+  transition:transform .35s ease, opacity .25s ease, background .25s ease;
+}
+.side-open .side-toggle .menu-bar:nth-child(1){transform:translateY(6.5px) rotate(45deg);background:var(--gold)}
+.side-open .side-toggle .menu-bar:nth-child(2){opacity:0}
+.side-open .side-toggle .menu-bar:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);background:var(--gold)}
+
+.head-view-icon{
+  display:none;width:40px;height:40px;
+  align-items:center;justify-content:center;
+  border:1px solid var(--line);color:var(--cream);
+  transition:all .25s;flex-shrink:0;
+}
+.head-view-icon:hover{border-color:var(--gold);color:var(--gold)}
+
+/* 侧栏遮罩（移动端） */
+.side-scrim{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  z-index:55;opacity:0;pointer-events:none;transition:opacity .35s;
+  display:none;
+}
 
 .tab-pane{display:none;padding:36px}
 .tab-pane.active{display:block;animation:fadeIn .3s ease}
@@ -216,6 +249,42 @@
 .btn-line.danger{border-color:rgba(229,69,69,.4);color:#E54545}
 .btn-line.danger:hover{background:#E54545;color:#fff;border-color:#E54545}
 
+/* —— 微信 QR 上传区 —— */
+.qr-upload-block{
+  border:1px dashed var(--line);padding:18px;
+  display:flex;flex-direction:column;gap:10px;
+  background:linear-gradient(135deg,rgba(201,169,97,.04),transparent);
+}
+.qr-upload-label{
+  font-size:11px;letter-spacing:.2em;color:var(--gold);
+  font-family:var(--display);text-transform:uppercase;
+}
+.qr-upload-block .muted.small{font-size:11.5px;line-height:1.65;color:var(--muted);margin:0}
+.qr-upload-row{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-top:4px}
+.qr-preview{
+  width:120px;height:120px;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;flex-shrink:0;position:relative;overflow:hidden;
+}
+.qr-preview img{width:100%;height:100%;object-fit:contain;display:block}
+.qr-preview .qr-empty{
+  font-family:var(--display);font-size:10px;color:#999;
+  letter-spacing:1.5px;text-align:center;
+}
+.qr-preview.has-img{padding:6px;border-color:var(--gold)}
+.qr-upload-actions{
+  display:flex;flex-direction:column;gap:8px;flex:1;min-width:140px;
+  align-items:flex-start;
+}
+.qr-upload-actions .btn-line{
+  padding:10px 18px;font-size:11px;cursor:pointer;text-align:center;
+  display:inline-flex;align-items:center;justify-content:center;
+  letter-spacing:.2em;min-width:120px;
+}
+.qr-upload-actions label.btn-line{margin:0}
+.qr-upload-status{font-size:11px;color:var(--gold);margin-top:4px;min-height:14px}
+.qr-upload-status.err{color:#E54545}
+
 /* ---------- Product edit ---------- */
 .prod-edit-card{max-width:780px}
 .prod-form{padding:24px 32px 32px;display:flex;flex-direction:column;gap:14px}
@@ -333,18 +402,163 @@
 .toast.err{background:#E54545;color:#fff}
 
 /* ---------- Responsive ---------- */
+/* —— 平板 / 小桌面：侧栏改为抽屉 —— */
 @media (max-width: 980px){
+  .admin-shell{display:block}
+  .admin-side{
+    width:280px;max-width:84vw;
+    transform:translateX(-100%);
+    transition:transform .35s cubic-bezier(.7,0,.3,1);
+    z-index:60;
+    box-shadow:30px 0 60px rgba(0,0,0,.5);
+    bottom:auto;
+    height:100vh;height:100dvh;
+    padding-top:18px;
+    overflow-y:auto;
+  }
+  .side-open .admin-side{transform:translateX(0)}
+  .side-scrim{display:block}
+  .side-open .side-scrim{opacity:1;pointer-events:auto}
+  .admin-main{margin-left:0}
+  .side-toggle{display:flex}
+
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
   .dash-grid{grid-template-columns:1fr}
   .settings-grid{grid-template-columns:1fr}
-  .admin-side{
-    width:100%;height:auto;position:static;flex-direction:row;
-    padding:14px;gap:0;flex-wrap:wrap;
-  }
-  .side-brand{padding:0 14px;border:none;flex:1}
-  .side-nav{flex-direction:row;flex:100%;padding:14px 0 0;overflow-x:auto}
-  .side-nav button{flex:1;min-width:120px;justify-content:center}
-  .side-foot{flex:0;padding:0 14px}
-  .admin-main{margin-left:0}
   .od-grid{grid-template-columns:1fr}
+
+  .admin-head{padding:0 22px;height:62px}
+  .admin-head h2{font-size:20px;letter-spacing:1.5px}
+  .tab-pane{padding:24px 22px}
+}
+
+/* —— 手机 —— */
+@media (max-width: 720px){
+  /* 顶栏：图标按钮替代文字按钮 */
+  .head-view-site{display:none}
+  .head-view-icon{display:inline-flex}
+  .admin-head{padding:0 14px;height:58px;gap:6px}
+  .admin-head h2{font-size:17px;letter-spacing:1px}
+  .admin-head-right{gap:8px}
+  .side-toggle{margin-right:4px;width:38px;height:38px}
+
+  .tab-pane{padding:20px 14px}
+
+  /* KPI */
+  .kpi-grid{gap:12px;margin-bottom:22px}
+  .kpi{padding:18px 16px}
+  .kpi-num{font-size:30px}
+  .kpi-lbl{font-size:11px;margin-top:6px}
+
+  /* Dashboard 卡 */
+  .dash-grid{gap:14px}
+  .dash-card{padding:18px 16px}
+  .dash-card h4{font-size:16px;margin-bottom:14px;padding-bottom:10px}
+  .recent-item{font-size:12.5px;padding:8px 0;flex-wrap:wrap;gap:4px}
+
+  /* Toolbar */
+  .pane-toolbar{gap:10px}
+  .pane-toolbar input,
+  .pane-toolbar select{min-width:0;width:100%;padding:12px 14px;font-size:14px}
+  .pane-toolbar .btn-gold{width:100%;padding:13px 18px;font-size:12px}
+
+  /* Table */
+  .data-table-wrap{margin:0 -14px;border-left:none;border-right:none}
+  .data-table{font-size:12.5px}
+  .data-table th,.data-table td{padding:10px 12px}
+  .data-table .thumb{width:42px;height:50px}
+  .data-table .actions{flex-direction:column;gap:6px}
+  .tbtn{padding:5px 10px;font-size:10px;letter-spacing:.5px}
+
+  /* Settings & Set-card */
+  .set-card{padding:22px 18px}
+  .set-card h4{font-size:18px}
+  .set-form{gap:12px;margin-top:16px}
+  .set-form input,.set-form textarea{padding:12px 14px;font-size:14px}
+
+  /* Product edit modal */
+  .prod-form{padding:18px 18px 22px;gap:12px}
+  .prod-form .form-row,
+  .prod-form .form-row.three{grid-template-columns:1fr;gap:12px}
+  .prod-form input,.prod-form textarea,.prod-form select{padding:12px 14px;font-size:14px}
+  #prodModalTitle{font-size:22px !important;padding:22px 50px 0 18px !important}
+  .prod-form .form-actions{flex-direction:column-reverse;gap:10px}
+  .prod-form .form-actions .btn-line,
+  .prod-form .form-actions .btn-gold{width:100%}
+
+  /* Order detail */
+  .order-detail-card{padding:24px 18px;max-width:100%}
+  .order-detail-card h3{font-size:20px;padding-right:46px}
+  .od-block{padding:14px}
+  .od-block p{font-size:12.5px}
+  .od-items{margin-top:14px}
+  .od-items-row{
+    grid-template-columns:50px 1fr auto;
+    grid-template-rows:auto auto;
+    gap:2px 12px;padding:12px;
+  }
+  .od-items-row > :nth-child(1){grid-row:1 / span 2;align-self:center}
+  .od-items-row > :nth-child(2){grid-column:2;grid-row:1;min-width:0}
+  .od-items-row > :nth-child(2) strong{font-size:13px}
+  .od-items-row > :nth-child(3){grid-column:2;grid-row:2;font-size:11px}
+  .od-items-row > :nth-child(4){grid-column:3;grid-row:1 / span 2;align-self:center;font-size:14px}
+  .od-items-row .thumb{width:46px;height:54px}
+  .od-status-actions{gap:6px}
+  .od-status-actions .tbtn{flex:1;min-width:40%;text-align:center}
+
+  /* Text editor */
+  .text-toolbar{
+    flex-direction:column;align-items:stretch;
+    top:58px;padding:12px;gap:10px;
+  }
+  .text-tabs{align-self:flex-start}
+  .text-tabs button{padding:10px 14px;font-size:12px}
+  .text-toolbar input[type="search"]{width:100%;padding:12px;font-size:14px}
+  .text-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .text-actions .btn-line,
+  .text-actions .btn-gold{padding:12px;font-size:12px}
+  .text-group > summary{padding:14px;font-size:15px}
+  .text-group-body{padding:8px 14px 14px}
+  .text-row input,.text-row textarea{padding:11px 12px;font-size:14px}
+
+  /* Login */
+  .admin-login{padding:24px 16px}
+  .login-card{padding:40px 26px}
+  .login-card h1{font-size:20px;letter-spacing:3px}
+  .login-card input{padding:14px;font-size:15px}
+
+  /* Toast safe-area */
+  .toast{
+    bottom:calc(20px + env(safe-area-inset-bottom));
+    left:14px;right:14px;transform:translateY(60px);
+    max-width:calc(100% - 28px);
+    text-align:center;
+  }
+  .toast.show{transform:translateY(0)}
+
+  /* Modal head titles smaller */
+  .prod-edit-card,.order-detail-card{max-width:100%}
+}
+
+/* —— 小屏手机 —— */
+@media (max-width: 480px){
+  .admin-head{padding:0 12px;gap:4px}
+  .admin-head h2{font-size:15px}
+  .side-toggle{width:36px;height:36px}
+  .head-view-icon{width:36px;height:36px}
+
+  .tab-pane{padding:18px 12px}
+
+  .kpi-num{font-size:24px}
+  .kpi{padding:16px 14px}
+
+  .set-card{padding:18px 14px}
+  .data-table th,.data-table td{padding:9px 10px;font-size:12px}
+}
+
+/* —— 触摸设备：去掉 hover 视觉 —— */
+@media (hover: none){
+  .data-table tr:hover td{background:transparent}
+  .side-nav button:hover{background:transparent;color:var(--cream-2)}
+  .side-nav button.active{background:linear-gradient(90deg,rgba(201,169,97,.15),transparent);color:var(--gold)}
 }

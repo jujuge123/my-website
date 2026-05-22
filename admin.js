@@ -253,8 +253,8 @@ function renderAdminVideoPreview(url, poster) {
   if (!url) { wrap.innerHTML = '<div class="qr-empty" style="padding:40px;text-align:center">请先填写视频链接</div>'; return; }
   const u = url.trim();
   let m;
-  // YouTube
-  if ((m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/))) {
+  // YouTube（含 Shorts）
+  if ((m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/))) {
     wrap.innerHTML = `<iframe src="https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen style="width:100%;height:100%;border:0"></iframe>`;
     return;
   }

@@ -58,6 +58,12 @@ function parseVideoSource(url) {
 // 根据 URL 挂载合适的播放器
 function mountVideo(url, posterUrl) {
   const src = parseVideoSource(url);
+  // 竖屏视频（YouTube Shorts）：把容器改成竖屏比例
+  const isVertical = src.type === 'youtube' && /\bshorts\//i.test(url);
+  const wrap = document.querySelector('.video-wrap');
+  if (wrap) {
+    wrap.classList.toggle('vertical', isVertical);
+  }
   if (src.type === 'mp4' || src.type === 'none') {
     // 显示 <video> + overlay，隐藏 iframe
     if (vEmbed) { vEmbed.hidden = true; vEmbed.innerHTML = ''; }

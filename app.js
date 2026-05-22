@@ -39,8 +39,8 @@ const vEmbed = $('#videoEmbed');
 function parseVideoSource(url) {
   if (!url) return { type: 'none' };
   const u = url.trim();
-  // YouTube
-  let m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  // YouTube（含 Shorts）
+  let m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
   if (m) return { type: 'youtube', embedUrl: `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1` };
   // Bilibili - bvid
   m = u.match(/bilibili\.com\/video\/(BV[A-Za-z0-9]+)/i);

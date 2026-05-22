@@ -322,6 +322,11 @@ input,textarea,select{font-size:16px} /* iOS 防聚焦缩放 */
   overflow:hidden;
   background:#000;
 }
+/* 竖屏视频（YouTube Shorts）容器：9:16 比例，最大宽度收缩 */
+.video-wrap.vertical{
+  aspect-ratio:9/16;
+  max-width:420px;
+}
 .video-wrap::before{
   content:"";position:absolute;inset:-1px;pointer-events:none;z-index:3;
   border:1px solid transparent;

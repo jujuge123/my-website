@@ -24,7 +24,7 @@ const DB = {
     wechatQR: '',
     whatsappNumber: '+86 138 2397 4479',
     whatsappLink: 'https://wa.me/8613823974479',
-    lineId: 'LUXE CHI',
+    lineId: 'shechi666888',
     lineLink: 'https://line.me/ti/p/yhj6axsxG7',
     videoUrl: 'https://cdn.pixabay.com/video/2022/12/18/143397-781571295_large.mp4',
     videoPoster: 'https://images.unsplash.com/photo-1522335789203-3da39d10ee0a?w=1600&q=80&auto=format&fit=crop',

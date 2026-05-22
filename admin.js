@@ -28,21 +28,24 @@ async function showAdmin() {
   await refreshAll();
 }
 
-$('#loginForm').addEventListener('submit', e => {
+$('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const pass  = $('#passInput').value;
   const btn = $('#loginBtn');
   btn.disabled = true;
   $('#loginErr').textContent = '';
-  if (DB.checkAdminPass(pass)) {
-    DB.setAdminAuth();
-    $('#passInput').value = '';
-    showAdmin();
-  } else {
-    $('#loginErr').textContent = '密码不正确';
-    $('#passInput').value = '';
+  try {
+    if (await DB.checkAdminPass(pass)) {
+      DB.setAdminAuth();
+      $('#passInput').value = '';
+      showAdmin();
+    } else {
+      $('#loginErr').textContent = '密码不正确';
+      $('#passInput').value = '';
+    }
+  } finally {
+    btn.disabled = false;
   }
-  btn.disabled = false;
 });
 
 $('#logoutBtn').addEventListener('click', () => {

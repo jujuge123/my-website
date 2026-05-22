@@ -32,7 +32,8 @@ const DB = {
     brandEN: 'LUXE CHI BEAUTY',
     brandMark: 'L · C',
     siteTitle: '奢驰美颜 · 全球运营中心 | LUXE CHI BEAUTY',
-    adminPass: 'luxe2025',  // 后台本地密码，首次登录后请修改
+    // 后台密码（SHA-256 hash）。要改密码：让管理员改 db.js 默认值或在后台改密码
+    adminPassHash: '597b40f79ac45814e08c5ec8c3fbe3fd996e338a8d1755b709a154f23f4109de',
     texts: {},
   },
 
@@ -119,10 +120,25 @@ const DB = {
   /* ---------- Auth（本地密码门） ---------- */
   ADMIN_SESSION_KEY: 'luxe.admin.session',
 
-  // 验证密码是否正确
-  checkAdminPass(pass) {
-    const cur = (this.cache.settings && this.cache.settings.adminPass) || this.defaultSettings.adminPass;
-    return pass === cur;
+  // SHA-256 hex（基于 Web Crypto，所有现代浏览器原生支持）
+  async _sha256(text) {
+    const buf = new TextEncoder().encode(text);
+    const hash = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  },
+
+  // 验证密码是否正确（支持新 hash 字段 + 旧明文字段兼容）
+  async checkAdminPass(pass) {
+    const s = this.cache.settings || this.defaultSettings;
+    const expectedHash = s.adminPassHash || this.defaultSettings.adminPassHash;
+    const givenHash = await this._sha256(pass || '');
+    if (expectedHash && givenHash === expectedHash) return true;
+    // 兼容旧版：本地缓存里如果还有明文 adminPass，也允许一次（自动迁移）
+    if (s.adminPass && pass === s.adminPass) {
+      try { await this.saveSettings({ adminPassHash: givenHash, adminPass: undefined }); } catch {}
+      return true;
+    }
+    return false;
   },
   // 登录成功后标记 session
   setAdminAuth() { sessionStorage.setItem(this.ADMIN_SESSION_KEY, '1'); },
@@ -130,11 +146,13 @@ const DB = {
   isAuth() { return sessionStorage.getItem(this.ADMIN_SESSION_KEY) === '1'; },
   user() { return this.isAuth() ? { email: '后台管理员' } : null; },
 
-  // 修改后台密码
+  // 修改后台密码（保存 hash）
   async changeAdminPass(oldPass, newPass) {
-    if (!this.checkAdminPass(oldPass)) throw new Error('当前密码不正确');
+    const ok = await this.checkAdminPass(oldPass);
+    if (!ok) throw new Error('当前密码不正确');
     if (!newPass || newPass.length < 6) throw new Error('新密码至少 6 位');
-    await this.saveSettings({ adminPass: newPass });
+    const newHash = await this._sha256(newPass);
+    await this.saveSettings({ adminPassHash: newHash, adminPass: undefined });
   },
 
   /* ---------- Media（小图转 base64，避免 Storage 鉴权） ---------- */
